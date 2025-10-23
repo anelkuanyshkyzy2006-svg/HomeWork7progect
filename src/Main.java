@@ -1,204 +1,253 @@
 import java.util.*;
 
-interface SortStrategy {
-    void sort();
-}
-
-class BubbleSort implements SortStrategy {
-    public void sort() { System.out.println("Сортировка пузырьком выполнена."); }
-}
-
-class SelectionSort implements SortStrategy {
-    public void sort() { System.out.println("Сортировка выбором выполнена."); }
-}
-
-class SortContext {
-    private SortStrategy strategy;
-    public void setStrategy(SortStrategy strategy) { this.strategy = strategy; }
-    public void execute() { strategy.sort(); }
-}
-
-interface Observer {
-    void update(String msg);
-}
-
-class ConcreteObserver implements Observer {
-    private String name;
-    public ConcreteObserver(String name) { this.name = name; }
-    public void update(String msg) { System.out.println(name + " получил сообщение: " + msg); }
-}
-
-class Subject {
-    private List<Observer> observers = new ArrayList<>();
-    public void add(Observer o) { observers.add(o); }
-    public void remove(Observer o) { observers.remove(o); }
-    public void notifyObservers(String msg) {
-        for (Observer o : observers) o.update(msg);
+public class PatternsModule07 {
+    interface ICommand {
+        void execute();
+        void undo();
     }
-}
 
-interface Command {
-    void execute();
-}
-
-class Light {
-    public void on() { System.out.println("Light is ON"); }
-    public void off() { System.out.println("Light is OFF"); }
-}
-
-class LightOnCommand implements Command {
-    private Light light;
-    public LightOnCommand(Light light) { this.light = light; }
-    public void execute() { light.on(); }
-}
-
-class LightOffCommand implements Command {
-    private Light light;
-    public LightOffCommand(Light light) { this.light = light; }
-    public void execute() { light.off(); }
-}
-
-class RemoteControl {
-    private Command command;
-    public void setCommand(Command command) { this.command = command; }
-    public void pressButton() { command.execute(); }
-}
-
-interface State {
-    void handle(Player player);
-}
-
-class StandingState implements State {
-    public void handle(Player player) {
-        System.out.println("Player is standing.");
-        player.setState(new JumpingState());
+    static class Light {
+        private boolean isOn = false;
+        public void on() { isOn = true; System.out.println("Light: ON"); }
+        public void off() { isOn = false; System.out.println("Light: OFF"); }
     }
-}
 
-class JumpingState implements State {
-    public void handle(Player player) {
-        System.out.println("Player is jumping.");
-        player.setState(new StandingState());
+    static class Door {
+        private boolean isOpen = false;
+        public void open() { isOpen = true; System.out.println("Door: OPEN"); }
+        public void close() { isOpen = false; System.out.println("Door: CLOSED"); }
     }
-}
 
-class Player {
-    private State state;
-    public Player(State state) { this.state = state; }
-    public void setState(State state) { this.state = state; }
-    public void action() { state.handle(this); }
-}
-
-abstract class Handler {
-    protected Handler next;
-    public void setNext(Handler next) { this.next = next; }
-    public abstract void handle(int request);
-}
-
-class ConcreteHandler1 extends Handler {
-    public void handle(int request) {
-        if (request < 3) System.out.println("Request " + request + " handled by Handler 1");
-        else if (next != null) next.handle(request);
+    static class Thermostat {
+        private int temperature = 22;
+        public void increase(int delta) { temperature += delta; System.out.println("Thermostat: " + temperature + "°C"); }
+        public void decrease(int delta) { temperature -= delta; System.out.println("Thermostat: " + temperature + "°C"); }
     }
-}
 
-class ConcreteHandler2 extends Handler {
-    public void handle(int request) {
-        if (request < 10) System.out.println("Request " + request + " handled by Handler 2");
-        else if (next != null) next.handle(request);
+    static class TV {
+        private boolean isOn = false;
+        public void on() { isOn = true; System.out.println("TV: ON"); }
+        public void off() { isOn = false; System.out.println("TV: OFF"); }
     }
-}
 
-class ConcreteHandler3 extends Handler {
-    public void handle(int request) {
-        System.out.println("Request " + request + " handled by Handler 3");
+    static class LightOnCommand implements ICommand {
+        private Light light;
+        public LightOnCommand(Light light) { this.light = light; }
+        public void execute() { light.on(); }
+        public void undo() { light.off(); }
     }
-}
 
-class IteratorExample implements Iterator<String> {
-    private List<String> items;
-    private int index = 0;
-    public IteratorExample(List<String> items) { this.items = items; }
-    public boolean hasNext() { return index < items.size(); }
-    public String next() { return items.get(index++); }
-}
-
-interface Mediator {
-    void send(String msg, Colleague sender);
-}
-
-abstract class Colleague {
-    protected Mediator mediator;
-    public Colleague(Mediator mediator) { this.mediator = mediator; }
-}
-
-class ConcreteColleague extends Colleague {
-    private String name;
-    public ConcreteColleague(Mediator mediator, String name) {
-        super(mediator);
-        this.name = name;
+    static class LightOffCommand implements ICommand {
+        private Light light;
+        public LightOffCommand(Light light) { this.light = light; }
+        public void execute() { light.off(); }
+        public void undo() { light.on(); }
     }
-    public void send(String msg) {
-        System.out.println(name + " sends: " + msg);
-        mediator.send(msg, this);
-    }
-    public void receive(String msg) {
-        System.out.println(name + " receives: " + msg);
-    }
-}
 
-class ConcreteMediator implements Mediator {
-    private List<ConcreteColleague> colleagues = new ArrayList<>();
-    public void addColleague(ConcreteColleague c) { colleagues.add(c); }
-    public void send(String msg, Colleague sender) {
-        for (ConcreteColleague c : colleagues)
-            if (c != sender) c.receive(msg);
+    static class DoorOpenCommand implements ICommand {
+        private Door door;
+        public DoorOpenCommand(Door door) { this.door = door; }
+        public void execute() { door.open(); }
+        public void undo() { door.close(); }
     }
-}
 
-public class Main {
+    static class DoorCloseCommand implements ICommand {
+        private Door door;
+        public DoorCloseCommand(Door door) { this.door = door; }
+        public void execute() { door.close(); }
+        public void undo() { door.open(); }
+    }
+
+    static class TempIncreaseCommand implements ICommand {
+        private Thermostat thermostat;
+        private int delta;
+        public TempIncreaseCommand(Thermostat t, int delta) { this.thermostat = t; this.delta = delta; }
+        public void execute() { thermostat.increase(delta); }
+        public void undo() { thermostat.decrease(delta); }
+    }
+
+    static class TempDecreaseCommand implements ICommand {
+        private Thermostat thermostat;
+        private int delta;
+        public TempDecreaseCommand(Thermostat t, int delta) { this.thermostat = t; this.delta = delta; }
+        public void execute() { thermostat.decrease(delta); }
+        public void undo() { thermostat.increase(delta); }
+    }
+
+    static class TVOnCommand implements ICommand {
+        private TV tv;
+        public TVOnCommand(TV tv) { this.tv = tv; }
+        public void execute() { tv.on(); }
+        public void undo() { tv.off(); }
+    }
+
+    static class TVOffCommand implements ICommand {
+        private TV tv;
+        public TVOffCommand(TV tv) { this.tv = tv; }
+        public void execute() { tv.off(); }
+        public void undo() { tv.on(); }
+    }
+
+    static class Invoker {
+        private final Deque<ICommand> history = new ArrayDeque<>();
+        private final int historyLimit;
+        public Invoker(int historyLimit) { this.historyLimit = Math.max(1, historyLimit); }
+        public void executeCommand(ICommand command) {
+            if (command == null) return;
+            command.execute();
+            history.push(command);
+            while (history.size() > historyLimit) history.removeLast();
+        }
+        public void undoLast() {
+            if (history.isEmpty()) { System.out.println("Undo error: нет выполненных команд для отмены."); return; }
+            ICommand cmd = history.pop();
+            cmd.undo();
+        }
+        public void undoMultiple(int count) {
+            if (count <= 0) return;
+            for (int i = 0; i < count; i++) {
+                if (history.isEmpty()) { System.out.println("Undo: больше нет команд."); break; }
+                undoLast();
+            }
+        }
+    }
+
+    static abstract class Beverage {
+        public final void prepareRecipe() {
+            boilWater();
+            brewOrSteep();
+            pourInCup();
+            if (customerWantsCondiments()) addCondiments();
+            else System.out.println("No condiments added.");
+        }
+        protected void boilWater() { System.out.println("Boiling water"); }
+        protected abstract void brewOrSteep();
+        protected void pourInCup() { System.out.println("Pouring into cup"); }
+        protected boolean customerWantsCondiments() { return true; }
+        protected abstract void addCondiments();
+    }
+
+    static class Tea extends Beverage {
+        protected void brewOrSteep() { System.out.println("Steeping the tea"); }
+        protected void addCondiments() { System.out.println("Adding lemon"); }
+    }
+
+    static class Coffee extends Beverage {
+        private String userInput = "yes";
+        public void setUserInput(String input) { this.userInput = input; }
+        protected void brewOrSteep() { System.out.println("Brewing the coffee"); }
+        protected void addCondiments() { System.out.println("Adding milk and sugar"); }
+        protected boolean customerWantsCondiments() {
+            if (userInput == null) return false;
+            String normalized = userInput.trim().toLowerCase();
+            if ("yes".equals(normalized) || "y".equals(normalized)) return true;
+            if ("no".equals(normalized) || "n".equals(normalized)) return false;
+            System.out.println("Warning: некорректный ввод '" + userInput + "'. По умолчанию — без добавок.");
+            return false;
+        }
+    }
+
+    static class HotChocolate extends Beverage {
+        protected void brewOrSteep() { System.out.println("Mixing chocolate powder"); }
+        protected void addCondiments() { System.out.println("Adding marshmallows"); }
+        private boolean wantCondiments = true;
+        public void setWantCondiments(boolean v) { wantCondiments = v; }
+        protected boolean customerWantsCondiments() { return wantCondiments; }
+    }
+
+    interface IMediator {
+        void register(User user);
+        void unregister(User user);
+        void send(String message, User from, String toUser);
+    }
+
+    static class ChatRoom implements IMediator {
+        private final Map<String, User> users = new HashMap<>();
+        public void register(User user) {
+            if (user == null) return;
+            if (!users.containsKey(user.getName())) {
+                users.put(user.getName(), user);
+                user.setMediator(this);
+                broadcastSystemMessage(user.getName() + " присоединился к чату.");
+            }
+        }
+        public void unregister(User user) {
+            if (user == null) return;
+            if (users.remove(user.getName()) != null) broadcastSystemMessage(user.getName() + " покинул чат.");
+        }
+        public void send(String message, User from, String toUser) {
+            if (from == null) return;
+            if (!users.containsKey(from.getName())) { from.receive("Ошибка: вы не в чате."); return; }
+            if (toUser == null || toUser.isEmpty()) {
+                for (User u : users.values())
+                    if (!u.getName().equals(from.getName()))
+                        u.receive(from.getName() + ": " + message);
+            } else {
+                User recipient = users.get(toUser);
+                if (recipient != null) recipient.receive("(личное) " + from.getName() + ": " + message);
+                else from.receive("Ошибка: пользователь '" + toUser + "' не найден.");
+            }
+        }
+        private void broadcastSystemMessage(String msg) {
+            for (User u : users.values()) u.receive("[Система]: " + msg);
+        }
+    }
+
+    static class User {
+        private final String name;
+        private IMediator mediator;
+        public User(String name) { this.name = name; }
+        public String getName() { return name; }
+        public void setMediator(IMediator mediator) { this.mediator = mediator; }
+        public void send(String message) { send(message, null); }
+        public void send(String message, String toUser) {
+            if (mediator == null) { System.out.println(name + " не подключен к чату."); return; }
+            mediator.send(message, this, toUser);
+        }
+        public void receive(String message) { System.out.println(name + " получает: " + message); }
+    }
+
     public static void main(String[] args) {
-        SortContext context = new SortContext();
-        context.setStrategy(new BubbleSort()); context.execute();
-        context.setStrategy(new SelectionSort()); context.execute();
-
-        Subject subject = new Subject();
-        ConcreteObserver o1 = new ConcreteObserver("Observer1");
-        ConcreteObserver o2 = new ConcreteObserver("Observer2");
-        subject.add(o1); subject.add(o2);
-        subject.notifyObservers("Событие №1");
-        subject.remove(o1);
-        subject.notifyObservers("Событие №2");
-
+        System.out.println("=== Command Pattern ===");
         Light light = new Light();
-        RemoteControl remote = new RemoteControl();
-        remote.setCommand(new LightOnCommand(light)); remote.pressButton();
-        remote.setCommand(new LightOffCommand(light)); remote.pressButton();
+        Door door = new Door();
+        Thermostat thermostat = new Thermostat();
+        TV tv = new TV();
+        Invoker invoker = new Invoker(10);
+        invoker.executeCommand(new LightOnCommand(light));
+        invoker.executeCommand(new DoorOpenCommand(door));
+        invoker.executeCommand(new TempIncreaseCommand(thermostat, 3));
+        invoker.executeCommand(new TVOnCommand(tv));
+        invoker.undoLast();
+        invoker.undoLast();
+        invoker.undoMultiple(5);
 
-        Player player = new Player(new StandingState());
-        player.action(); player.action(); player.action();
+        System.out.println("\n=== Template Method ===");
+        Tea tea = new Tea();
+        System.out.println("Preparing tea:");
+        tea.prepareRecipe();
+        Coffee coffee = new Coffee();
+        coffee.setUserInput("no");
+        System.out.println("\nPreparing coffee:");
+        coffee.prepareRecipe();
+        HotChocolate choc = new HotChocolate();
+        choc.setWantCondiments(true);
+        System.out.println("\nPreparing hot chocolate:");
+        choc.prepareRecipe();
 
-        Handler h1 = new ConcreteHandler1();
-        Handler h2 = new ConcreteHandler2();
-        Handler h3 = new ConcreteHandler3();
-        h1.setNext(h2); h2.setNext(h3);
-        int[] requests = {2, 5, 14};
-        for (int r : requests) h1.handle(r);
-
-        List<String> items = Arrays.asList("A", "B", "C");
-        IteratorExample it = new IteratorExample(items);
-        while (it.hasNext()) System.out.println("Item: " + it.next());
-
-        ConcreteMediator mediator = new ConcreteMediator();
-        ConcreteColleague alice = new ConcreteColleague(mediator, "Alice");
-        ConcreteColleague bob = new ConcreteColleague(mediator, "Bob");
-        mediator.addColleague(alice); mediator.addColleague(bob);
-        alice.send("Hi Bob");
-        bob.send("Hello Alice");
+        System.out.println("\n=== Mediator Pattern ===");
+        ChatRoom chat = new ChatRoom();
+        User alice = new User("Alice");
+        User bob = new User("Bob");
+        User cathy = new User("Cathy");
+        chat.register(alice);
+        chat.register(bob);
+        chat.register(cathy);
+        alice.send("Привет всем!");
+        bob.send("Привет, Alice!", "Alice");
+        User dave = new User("Dave");
+        dave.send("Я не в чате");
+        chat.unregister(cathy);
+        System.out.println("\nDemo finished.");
     }
 }
-
-
-
-
-
